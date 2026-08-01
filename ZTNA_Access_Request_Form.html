@@ -103,6 +103,8 @@
     @media print {
       .progress-bar, .brow, .arf, .bdl, .header-right { display: none !important; }
       .step-panel { display: block !important; }
+      #step1 { display: none !important; }
+      #downloadReportsCard { display: none !important; }
       .main { max-width: 100%; margin: 0; padding: 12px; }
       .card { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
     }
@@ -120,7 +122,7 @@
     <div class="header-logo">TERANET</div>
     <div>
       <div class="header-title">ZTNA Access Request</div>
-      <div class="header-sub">GlobalProtect Migration — Information Security</div>
+      <div class="header-sub">GlobalProtect Migration — Information Security &nbsp;|&nbsp; v1.0</div>
     </div>
   </div>
   <div><div class="user-badge" id="userBadge">Loading...</div></div>
@@ -379,7 +381,7 @@
       <div class="rsec"><div class="rstitle">Database Servers (<span id="reviewDbCount">0</span>)</div><table class="dt"><thead><tr><th>#</th><th>Hostname</th><th>IP</th><th>Type</th><th>Port</th><th>Description</th></tr></thead><tbody id="reviewDbBody"></tbody></table></div>
       <div class="rsec"><div class="rstitle">Other Resources (<span id="reviewOtherCount">0</span>)</div><table class="dt"><thead><tr><th>#</th><th>Address</th><th>Port(s)</th><th>Description</th></tr></thead><tbody id="reviewOtherBody"></tbody></table></div>
     </div>
-    <div class="card">
+    <div class="card" style="display:block" id="downloadReportsCard">
       <div class="card-title"><div class="card-title-icon">📥</div>Download Reports</div>
       <div class="card-desc">Download a copy of your submission for your records before or after submitting.</div>
       <div class="brow">
