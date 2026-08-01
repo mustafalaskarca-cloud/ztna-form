@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ZTNA Access Request — Teranet Information Security</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green: #006633; --green-dark: #004d26; --green-light: #e8f5ee;
+      --green-border: rgba(0,102,51,0.3); --blue: #1F4E79;
+      --text: #1a1a2e; --muted: #6b7280; --border: #e0e4ed;
+      --surface: #f9fafb; --red: #dc2626; --red-bg: #fef2f2;
+      --yellow: #d97706; --yellow-bg: #fffbeb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: #f4f6f9; color: var(--text); font-size: 16px; }
+    .header { background: var(--green); padding: 0 40px; display: flex; align-items: center; justify-content: space-between; height: 70px; }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .header-logo { background: white; padding: 6px 12px; border-radius: 6px; font-family: 'IBM Plex Sans', sans-serif; font-weight: 900; font-size: 16px; color: var(--green); letter-spacing: 1px; }
+    .header-title { color: white; font-size: 18px; font-weight: 700; }
+    .header-sub { color: rgba(255,255,255,0.75); font-size: 11px; margin-top: 2px; }
+    .user-badge { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; padding: 4px 14px; color: white; font-size: 11px; }
+    .progress-bar { background: white; border-bottom: 1px solid var(--border); padding: 0 40px; display: flex; align-items: center; overflow-x: auto; }
+    .step-item { display: flex; align-items: center; padding: 14px 0; flex-shrink: 0; }
+    .step-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; border: 2px solid var(--border); background: white; color: var(--muted); flex-shrink: 0; transition: all 0.2s; }
+    .step-circle.active { background: var(--green); border-color: var(--green); color: white; }
+    .step-circle.done { background: var(--green); border-color: var(--green); color: white; }
+    .step-label { font-size: 11px; color: var(--muted); margin-left: 8px; white-space: nowrap; font-weight: 500; }
+    .step-label.active { color: var(--green); font-weight: 600; }
+    .step-connector { width: 32px; height: 2px; background: var(--border); margin: 0 8px; flex-shrink: 0; }
+    .step-connector.done { background: var(--green); }
+    .main { max-width: 900px; margin: 32px auto; padding: 0 24px 80px; }
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+    .card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 28px 32px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .card-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+    .card-title-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .card-desc { font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+    .ibox { background: var(--green-light); border: 1px solid var(--green-border); border-left: 4px solid var(--green); border-radius: 8px; padding: 20px 24px; margin-bottom: 20px; }
+    .ibox-title { font-size: 13px; font-weight: 700; color: var(--green); margin-bottom: 12px; }
+    .ilist { list-style: none; padding: 0; }
+    .ilist li { font-size: 14px; color: var(--text); padding: 8px 0; border-bottom: 1px solid var(--green-border); display: flex; gap: 10px; line-height: 1.6; }
+    .ilist li:last-child { border-bottom: none; }
+    .ilist li::before { content: '\2611'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; font-size:16px; }
+    .wbox { background: var(--yellow-bg); border: 1px solid rgba(217,119,6,0.3); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; }
+    .wbox p { font-size: 12px; color: #92400e; line-height: 1.6; }
+    .fg { margin-bottom: 20px; }
+    .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .req { color: var(--red); margin-left: 2px; }
+    input[type="text"], input[type="email"], select { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; color: var(--text); background: white; transition: border-color 0.15s; outline: none; }
+    input:focus, select:focus { border-color: var(--green); }
+    input::placeholder { color: #9ca3af; }
+    .fhint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .tsec { margin-top: 24px; }
+    .thead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .tlabel { font-size: 13px; font-weight: 600; color: var(--text); }
+    .tcount { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 2px 8px; }
+    .dt { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .dt th { background: var(--green); color: white; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; }
+    .dt th:first-child { border-radius: 8px 0 0 0; }
+    .dt th:last-child { border-radius: 0 8px 0 0; }
+    .dt td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+    .dt tr:last-child td { border-bottom: none; }
+    .dt tr:hover td { background: var(--surface); }
+    .er td { text-align: center; color: var(--muted); padding: 24px; font-style: italic; font-size: 12px; }
+    .dbtn { background: none; border: none; color: var(--red); cursor: pointer; font-size: 16px; padding: 4px 8px; border-radius: 4px; }
+    .dbtn:hover { background: var(--red-bg); }
+    .arf { background: var(--surface); border: 1.5px dashed var(--border); border-radius: 10px; padding: 16px 20px; margin-top: 12px; }
+    .art { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 12px; }
+    .arfields { display: grid; gap: 10px; }
+    .c2 { grid-template-columns: 1fr 1fr; }
+    .c3 { grid-template-columns: 1fr 1fr 1fr; }
+    .c4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    .abtn { background: var(--green); color: white; border: none; border-radius: 8px; padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; margin-top: 12px; font-family: 'IBM Plex Sans', sans-serif; }
+    .abtn:hover { background: var(--green-dark); }
+    .brow { display: flex; gap: 12px; margin-top: 28px; align-items: center; flex-wrap: wrap; }
+    .bprimary { background: var(--green); color: white; border: none; border-radius: 8px; padding: 12px 28px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; }
+    .bprimary:hover { background: var(--green-dark); }
+    .bback { background: none; color: var(--muted); border: none; padding: 12px 0; font-size: 13px; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; }
+    .bback:hover { color: var(--text); }
+    .bdraft { background: var(--blue); color: white; border: none; border-radius: 8px; padding: 12px 24px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; }
+    .bdl { background: white; color: var(--green); border: 2px solid var(--green); border-radius: 8px; padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; }
+    .bdl:hover { background: var(--green); color: white; }
+    .refbadge { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: var(--green); background: var(--green-light); border: 2px solid var(--green-border); border-radius: 10px; padding: 12px 24px; display: inline-block; margin: 16px 0; }
+    .rsec { margin-bottom: 20px; }
+    .rstitle { font-size: 12px; font-weight: 700; color: var(--green); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--green-light); }
+    .rtable { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 8px; }
+    .rtable td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+    .rtable td:first-child { font-weight: 600; color: var(--muted); width: 180px; }
+    .rtable tr:last-child td { border-bottom: none; }
+    .sbanner { background: var(--green-light); border: 1px solid var(--green-border); border-radius: 12px; padding: 32px; text-align: center; margin-bottom: 24px; }
+    .sicon { font-size: 48px; margin-bottom: 12px; }
+    .stitle { font-size: 22px; font-weight: 700; color: var(--green); margin-bottom: 8px; }
+    .ssub { font-size: 14px; color: var(--muted); line-height: 1.6; }
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--text); color: white; padding: 12px 20px; border-radius: 8px; font-size: 13px; z-index: 1000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .toast.show { display: block; }
+    .toast.success { background: var(--green); }
+    .toast.error { background: var(--red); }
+    .portauto { font-size: 10px; color: var(--green); font-weight: 600; margin-top: 3px; }
+    .badge { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
+    @media print {
+      .progress-bar, .brow, .arf, .bdl, .header-right { display: none !important; }
+      .step-panel { display: block !important; }
+      .main { max-width: 100%; margin: 0; padding: 12px; }
+      .card { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+    }
+    @media (max-width: 680px) {
+      .frow, .c2, .c3, .c4 { grid-template-columns: 1fr; }
+      .main { padding: 0 12px 60px; }
+      .header { padding: 0 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">TERANET</div>
+    <div>
+      <div class="header-title">ZTNA Access Request</div>
+      <div class="header-sub">GlobalProtect Migration — Information Security</div>
+    </div>
+  </div>
+  <div><div class="user-badge" id="userBadge">Loading...</div></div>
+</div>
+
+<div class="progress-bar">
+  <div class="step-item"><div class="step-circle active" id="sc1">1</div><div class="step-label active" id="sl1">Instructions</div></div>
+  <div class="step-connector" id="con1"></div>
+  <div class="step-item"><div class="step-circle" id="sc2">2</div><div class="step-label" id="sl2">Team &amp; Members</div></div>
+  <div class="step-connector" id="con2"></div>
+  <div class="step-item"><div class="step-circle" id="sc3">3</div><div class="step-label" id="sl3">Web Apps</div></div>
+  <div class="step-connector" id="con3"></div>
+  <div class="step-item"><div class="step-circle" id="sc4">4</div><div class="step-label" id="sl4">Servers</div></div>
+  <div class="step-connector" id="con4"></div>
+  <div class="step-item"><div class="step-circle" id="sc5">5</div><div class="step-label" id="sl5">Other Resources</div></div>
+  <div class="step-connector" id="con5"></div>
+  <div class="step-item"><div class="step-circle" id="sc6">6</div><div class="step-label" id="sl6">Review &amp; Submit</div></div>
+</div>
+
+<div class="main">
+
+  <!-- STEP 1 -->
+  <div class="step-panel active" id="step1">
+    <div class="card">
+      <div class="card-title"><div class="card-title-icon">📋</div>Before You Begin</div>
+      <div class="card-desc">This form helps the Information Security team configure your team's access to corporate resources through GlobalProtect (GP) — Teranet's new secure remote access platform replacing Cisco AnyConnect VPN to implement Zero Trust Network Access (ZTNA). Please read these instructions carefully before proceeding.</div>
+      <div style="background:#fff3cd;border:2px solid #f0a500;border-left:6px solid #f0a500;border-radius:10px;padding:18px 24px;margin-bottom:20px;display:flex;gap:14px;align-items:flex-start;">
+        <div style="font-size:28px;flex-shrink:0;line-height:1;">⚠️</div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:#7a4f00;margin-bottom:6px;">Important — Include All VPN-Dependent Resources</div>
+          <div style="font-size:14px;color:#7a4f00;line-height:1.65;">This form must capture <strong>every resource your team currently needs VPN to access</strong> — applications, servers, databases, file shares, and anything else. If a resource is missed, your team will not be able to reach it after migrating to GlobalProtect. When in doubt, include it.</div>
+        </div>
+      </div>
+      <div class="ibox">
+        <div class="ibox-title">📌 What You Need to Provide</div>
+        <ul class="ilist">
+          <li>Your team name and the AD usernames of all members who need remote access (AD username only, e.g. jsmith01 — no @teranet.ca)</li>
+          <li>Web application URLs your team accesses via browser — full URL including port if non-standard (e.g. https://app.teranet.ca:8443)</li>
+          <li>RDP and SSH servers (if applicable) — hostname/FQDN, IP address (IP is optional). Only include Dev/UAT and non-production servers; Production servers are handled via CyberArk.</li>
+          <li>Database servers — hostname, IP address, database type, and port or connection string</li>
+          <li>Any other resources — file shares, SMTP, custom port apps, anything you need VPN to reach. If you access any resource through a custom application, provide the full connection string.</li>
+        </ul>
+      </div>
+      <div class="ibox">
+        <div class="ibox-title">✅ What to Include</div>
+        <ul class="ilist">
+          <li style="font-size:15px;font-weight:700;color:#b91c1c;background:#fef2f2;padding:10px 12px;border-radius:6px;border-bottom:none;margin-bottom:4px;border-left:4px solid #dc2626;">If you open VPN before accessing it — list it.</li>
+          <li>When in doubt, include it. Better to over-report than miss something your team needs.</li>
+          <li>Public websites accessible without VPN are optional to include.</li>
+          <li>If you have a hostname but no IP address, leave the IP field blank.</li>
+        </ul>
+      </div>
+      <div class="wbox"><p>⚠️ <strong>Important:</strong> Use the <strong>Save Draft</strong> button regularly as you fill in the form. Your draft is saved in your browser — if you reopen this form in the same browser, your data will be restored automatically. When you are ready, click <strong>Submit</strong> on the final step — your JSON file will download automatically.</p></div>
+      <div class="ibox">
+        <div class="ibox-title">📬 After Submission</div>
+        <ul class="ilist">
+          <li>You will receive a Submission Reference Number (e.g. ZTNA-2026-0042) — save this for your records and follow-up</li>
+          <li>The Information Security team will review your submission and configure ZTNA access accordingly</li>
+          <li>For follow-up questions, post in the #RolloutSupport Slack channel with your reference number.</li>
+        </ul>
+      </div>
+
+      <div class="brow">
+        <button class="bprimary" onclick="goToStep(2)">I Understand — Proceed to Form →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step-panel" id="step2">
+    <div class="card">
+      <div class="card-title"><div class="card-title-icon">🏢</div>Team Information</div>
+      <div class="card-desc">Enter your department or team name and your contact details. This information identifies your submission.</div>
+      <div class="frow">
+        <div class="fg"><label>Department / Team Name <span class="req">*</span></label><input type="text" id="teamName" placeholder="e.g. Customer Service, IT Operations" oninput="autosave()"></div>
+        <div class="fg"><label>Manager Name <span class="req">*</span></label><input type="text" id="managerName" placeholder="Your full name" oninput="autosave()"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Manager Email <span class="req">*</span></label><input type="email" id="managerEmail" placeholder="yourname@teranet.ca" oninput="autosave()"></div>
+        <div class="fg"><label>Notes (optional)</label><input type="text" id="teamNotes" placeholder="e.g. existing rule suspected, special requirements" oninput="autosave()"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="card-title-icon">👥</div>Team Members</div>
+      <div class="card-desc">Add the AD username of each team member who needs remote access. AD username only — no @teranet.ca suffix (e.g. jsmith01).</div>
+      <div class="tsec">
+        <div class="thead"><span class="tlabel">Members</span><span class="tcount" id="memberCount">0 members</span></div>
+        <table class="dt"><thead><tr><th>#</th><th>AD Username</th><th></th></tr></thead><tbody id="membersBody"><tr class="er"><td colspan="3">No members added yet.</td></tr></tbody></table>
+        <div class="arf">
+          <div class="art">+ Add Team Member</div>
+          <div class="arfields c2">
+            <div><label>AD Username <span class="req">*</span></label><input type="text" id="newMemberUsername" placeholder="e.g. jsmith01" onkeypress="if(event.key==='Enter')addMember()"><div class="fhint">No @teranet.ca — AD username only</div></div>
+            <div style="display:flex;align-items:flex-end;"><button class="abtn" onclick="addMember()">+ Add Member</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="brow">
+      <button class="bback" onclick="goToStep(1)">← Back</button>
+      <button class="bdraft" onclick="saveDraft()">💾 Save Draft</button>
+      <button class="bprimary" onclick="goToStep(3)">Next: Web Applications →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step-panel" id="step3">
+    <div class="card">
+      <div class="card-title"><div class="card-title-icon">🌐</div>Web Application URLs</div>
+      <div class="card-desc">List all web applications your team accesses via a browser. Include the full URL. If the port is already in the URL (e.g. https://app.teranet.ca:8443), leave the Port field blank — do not enter the port twice.</div>
+      <div class="ibox">
+        <div class="ibox-title">💡 Examples</div>
+        <ul class="ilist">
+          <li>https://teradmin.ca/ta_internal/Login.jsp — Internal admin portal</li>
+          <li>https://portas-pass.corp.teranet.ca/admin/welcome — Portas Pass admin</li>
+          <li>https://internalapp.teranet.ca:8443 — Custom port in URL; leave Port field blank</li>
+        </ul>
+      </div>
+      <div class="tsec">
+        <div class="thead"><span class="tlabel">Web Applications</span><span class="tcount" id="webappCount">0 entries</span></div>
+        <table class="dt"><thead><tr><th>#</th><th>URL</th><th>Port(s)</th><th>Description</th><th></th></tr></thead><tbody id="webappsBody"><tr class="er"><td colspan="5">No web applications added yet.</td></tr></tbody></table>
+        <div class="arf">
+          <div class="art">+ Add Web Application</div>
+          <div class="arfields c3">
+            <div><label>URL <span class="req">*</span></label><input type="text" id="newWebUrl" placeholder="https://app.teranet.ca"></div>
+            <div><label>Port(s)</label><input type="text" id="newWebPort" placeholder="443" value="443"><div class="fhint">Default 443. Multiple ports comma-separated.</div></div>
+            <div><label>Description</label><input type="text" id="newWebDesc" placeholder="e.g. Internal admin portal"></div>
+          </div>
+          <button class="abtn" onclick="addWebApp()">+ Add Web Application</button>
+        </div>
+      </div>
+    </div>
+    <div class="brow">
+      <button class="bback" onclick="goToStep(2)">← Back</button>
+      <button class="bdraft" onclick="saveDraft()">💾 Save Draft</button>
+      <button class="bprimary" onclick="goToStep(4)">Next: Servers →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="step-panel" id="step4">
+    <div class="card">
+      <div class="card-title"><div class="card-title-icon">🖥️</div>RDP Servers</div>
+      <div class="card-desc">List all Windows servers your team connects to via Remote Desktop. Port defaults to 3389.</div>
+      <div style="background:#fff3cd;border:1.5px solid #f0a500;border-left:5px solid #f0a500;border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:14px;color:#7a4f00;">
+        ⚠️ <strong>Dev/UAT and non-production servers only.</strong> Do not list Production servers here — Production RDP access is managed through CyberArk and does not need to be configured in ZTNA.
+      </div>
+      <div class="tsec">
+        <div class="thead"><span class="tlabel">RDP Servers</span><span class="tcount" id="rdpCount">0 entries</span></div>
+        <table class="dt"><thead><tr><th>#</th><th>Hostname</th><th>IP Address</th><th>Port</th><th>Description</th><th></th></tr></thead><tbody id="rdpBody"><tr class="er"><td colspan="6">No RDP servers added yet.</td></tr></tbody></table>
+        <div class="arf">
+          <div class="art">+ Add RDP Server</div>
+          <div class="arfields c4">
+            <div><label>Hostname <span class="req">*</span></label><input type="text" id="newRdpHost" placeholder="e.g. az1avnapvwdv001.corp.teranet.ca"></div>
+            <div><label>IP Address</label><input type="text" id="newRdpIp" placeholder="e.g. 172.25.81.10"><div class="fhint">Leave blank if not known</div></div>
+            <div><label>Port</label><input type="text" value="3389" readonly><div class="portauto">✓ Fixed at 3389 (standard RDP)</div></div>
+            <div><label>Description</label><input type="text" id="newRdpDesc" placeholder="e.g. Application server"></div>
+          </div>
+          <button class="abtn" onclick="addRdpServer()">+ Add RDP Server</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="card-title-icon">🐧</div>SSH Servers</div>
+      <div class="card-desc">List all Linux/Unix servers your team connects to via SSH. Port defaults to 22.</div>
+      <div style="background:#fff3cd;border:1.5px solid #f0a500;border-left:5px solid #f0a500;border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:14px;color:#7a4f00;">
+        ⚠️ <strong>Dev/UAT and non-production servers only.</strong> Do not list Production servers here — Production SSH access is managed through CyberArk and does not need to be configured in ZTNA.
+      </div>
+      <div class="tsec">
+        <div class="thead"><span class="tlabel">SSH Servers</span><span class="tcount" id="sshCount">0 entries</span></div>
+        <table class="dt"><thead><tr><th>#</th><th>Hostname</th><th>IP Address</th><th>Port</th><th>Description</th><th></th></tr></thead><tbody id="sshBody"><tr class="er"><td colspan="6">No SSH servers added yet.</td></tr></tbody></table>
+        <div class="arf">
+          <div class="art">+ Add SSH Server</div>
+          <div class="arfields c4">
+            <div><label>Hostname <span class="req">*</span></label><input type="text" id="newSshHost" placeholder="e.g. mssaplxvwpr01.corp.teranet.ca"></div>
+            <div><label>IP Address</label><input type="text" id="newSshIp" placeholder="e.g. 172.25.81.11"><div class="fhint">Leave blank if not known</div></div>
+            <div><label>Port</label><input type="text" value="22" readonly><div class="portauto">✓ Fixed at 22 (standard SSH)</div></div>
+            <div><label>Description</label><input type="text" id="newSshDesc" placeholder="e.g. Linux app server"></div>
+          </div>
+          <button class="abtn" onclick="addSshServer()">+ Add SSH Server</button>
+        </div>
+      </div>
+    </div>
+    <div class="brow">
+      <button class="bback" onclick="goToStep(3)">← Back</button>
+      <button class="bdraft" onclick="saveDraft()">💾 Save Draft</button>
+      <button class="bprimary" onclick="goToStep(5)">Next: Other Resources →</button>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="step-panel" id="step5">
+    <div class="card">
+      <div class="card-title"><div class="card-title-icon">🗄️</div>Database Servers</div>
+      <div class="card-desc">List all database servers your team connects to directly. Select the database type and the port will auto-fill.</div>
+      <div class="tsec">
+        <div class="thead"><span class="tlabel">Database Servers</span><span class="tcount" id="dbCount">0 entries</span></div>
+        <table class="dt"><thead><tr><th>#</th><th>Hostname</th><th>IP Address</th><th>DB Type</th><th>Port</th><th>Description</th><th></th></tr></thead><tbody id="dbBody"><tr class="er"><td colspan="7">No database servers added yet.</td></tr></tbody></table>
+        <div class="arf">
+          <div class="art">+ Add Database Server</div>
+          <div class="arfields c3">
+            <div><label>Hostname <span class="req">*</span></label><input type="text" id="newDbHost" placeholder="e.g. az3appdbvwpr01.corp.teranet.ca"></div>
+            <div><label>IP Address</label><input type="text" id="newDbIp" placeholder="e.g. 10.200.1.50"></div>
+            <div><label>Database Type <span class="req">*</span></label><select id="newDbType" onchange="updateDbPort()"><option value="">Select type...</option><option value="oracle">Oracle</option><option value="mssql">MSSQL (SQL Server)</option><option value="postgresql">PostgreSQL</option><option value="other">Other</option></select></div>
+          </div>
+          <div class="arfields c2" style="margin-top:10px;">
+            <div><label>Port <span class="req">*</span></label><input type="text" id="newDbPort" placeholder="e.g. 1521"><div class="portauto" id="dbPortHint"></div></div>
+            <div><label>Description</label><input type="text" id="newDbDesc" placeholder="e.g. Production Oracle DB"></div>
+          </div>
+          <button class="abtn" onclick="addDbServer()">+ Add Database Server</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="card-title-icon">📦</div>Other Resources</div>
+      <div class="card-desc">List anything else that does not fit the categories above — file shares, SMTP servers, custom port applications, or any other resource you need VPN to reach.</div>
+      <div class="ibox">
+        <div class="ibox-title">💡 Examples</div>
+        <ul class="ilist">
+          <li>\\mrfsmwp1\SharedDrive — Network file share (port 445)</li>
+          <li>smtp-relay.corp.teranet.ca — SMTP relay server (port 25)</li>
+          <li>erp-app.corp.teranet.ca — Internal ERP on custom port 8080</li>
+        </ul>
+      </div>
+      <div class="tsec">
+        <div class="thead"><span class="tlabel">Other Resources</span><span class="tcount" id="otherCount">0 entries</span></div>
+        <table class="dt"><thead><tr><th>#</th><th>Hostname / Address</th><th>Port(s)</th><th>Description</th><th></th></tr></thead><tbody id="otherBody"><tr class="er"><td colspan="5">No other resources added yet.</td></tr></tbody></table>
+        <div class="arf">
+          <div class="art">+ Add Other Resource</div>
+          <div class="arfields c3">
+            <div><label>Hostname / Address <span class="req">*</span></label><input type="text" id="newOtherHost" placeholder="e.g. \\mrfsmwp1\SharedDrive"></div>
+            <div><label>Port(s)</label><input type="text" id="newOtherPort" placeholder="e.g. 445, 25"></div>
+            <div><label>Description</label><input type="text" id="newOtherDesc" placeholder="e.g. Shared network drive"></div>
+          </div>
+          <button class="abtn" onclick="addOtherResource()">+ Add Resource</button>
+        </div>
+      </div>
+    </div>
+    <div class="brow">
+      <button class="bback" onclick="goToStep(4)">← Back</button>
+      <button class="bdraft" onclick="saveDraft()">💾 Save Draft</button>
+      <button class="bprimary" onclick="goToStep(6)">Next: Review &amp; Submit →</button>
+    </div>
+  </div>
+
+  <!-- STEP 6 -->
+  <div class="step-panel" id="step6">
+    <div class="card">
+      <div class="card-title"><div class="card-title-icon">🔍</div>Review Your Submission</div>
+      <div class="card-desc">Please review all information below before submitting. Once submitted, the Information Security team will be notified.</div>
+      <div class="rsec"><div class="rstitle">Team Information</div><table class="rtable" id="reviewTeam"></table></div>
+      <div class="rsec"><div class="rstitle">Team Members (<span id="reviewMemberCount">0</span>)</div><table class="dt"><thead><tr><th>#</th><th>AD Username</th></tr></thead><tbody id="reviewMembersBody"></tbody></table></div>
+      <div class="rsec"><div class="rstitle">Web Applications (<span id="reviewWebCount">0</span>)</div><table class="dt"><thead><tr><th>#</th><th>URL</th><th>Port(s)</th><th>Description</th></tr></thead><tbody id="reviewWebBody"></tbody></table></div>
+      <div class="rsec"><div class="rstitle">RDP Servers (<span id="reviewRdpCount">0</span>)</div><table class="dt"><thead><tr><th>#</th><th>Hostname</th><th>IP</th><th>Port</th><th>Description</th></tr></thead><tbody id="reviewRdpBody"></tbody></table></div>
+      <div class="rsec"><div class="rstitle">SSH Servers (<span id="reviewSshCount">0</span>)</div><table class="dt"><thead><tr><th>#</th><th>Hostname</th><th>IP</th><th>Port</th><th>Description</th></tr></thead><tbody id="reviewSshBody"></tbody></table></div>
+      <div class="rsec"><div class="rstitle">Database Servers (<span id="reviewDbCount">0</span>)</div><table class="dt"><thead><tr><th>#</th><th>Hostname</th><th>IP</th><th>Type</th><th>Port</th><th>Description</th></tr></thead><tbody id="reviewDbBody"></tbody></table></div>
+      <div class="rsec"><div class="rstitle">Other Resources (<span id="reviewOtherCount">0</span>)</div><table class="dt"><thead><tr><th>#</th><th>Address</th><th>Port(s)</th><th>Description</th></tr></thead><tbody id="reviewOtherBody"></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="card-title-icon">📥</div>Download Reports</div>
+      <div class="card-desc">Download a copy of your submission for your records before or after submitting.</div>
+      <div class="brow">
+        <button class="bdl" onclick="downloadCSV()">📊 Download Excel/CSV</button>
+        <button class="bdl" onclick="downloadJSON()">{ } Download JSON</button>
+        <button class="bdl" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </div>
+    </div>
+    <div class="brow">
+      <button class="bback" onclick="goToStep(5)">← Back</button>
+      <button class="bdraft" onclick="saveDraft()">💾 Save Draft</button>
+      <button class="bprimary" onclick="submitForm()" style="background:#1F4E79;">✅ Submit Request</button>
+    </div>
+  </div>
+
+  <!-- STEP 7: SUCCESS -->
+  <div class="step-panel" id="step7">
+    <div class="sbanner">
+      <div class="sicon">✅</div>
+      <div class="stitle">Request Submitted Successfully</div>
+      <div class="ssub">Your ZTNA access request has been submitted to the Information Security team.<br>Please save your reference number below for follow-up.</div>
+      <div class="refbadge" id="finalRef">ZTNA-2026-0000</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px;">Submitted on <span id="submitDate"></span></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="card-title-icon">📥</div>Download Your Submission</div>
+      <div class="card-desc">Download a copy for your records. Share the JSON file with the IS team if requested.</div>
+      <div class="brow">
+        <button class="bdl" onclick="downloadCSV()">📊 Download Excel/CSV</button>
+        <button class="bdl" onclick="downloadJSON()">{ } Download JSON</button>
+        <button class="bdl" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">What Happens Next?</div>
+      <div style="background:#fff3cd;border:2px solid #f0a500;border-left:6px solid #f0a500;border-radius:10px;padding:18px 24px;margin-bottom:20px;display:flex;gap:14px;align-items:flex-start;">
+        <div style="font-size:28px;flex-shrink:0;line-height:1;">📧</div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:#7a4f00;margin-bottom:6px;">Action Required — Email Your JSON File</div>
+          <div style="font-size:14px;color:#7a4f00;line-height:1.65;">Your JSON file has been downloaded automatically. Please email it to <strong>informationsecurity@teranet.ca</strong> with your reference number <strong><span id="refInCard"></span></strong> in the subject line. The IS team will configure your ZTNA access upon receipt.</div>
+        </div>
+      </div>
+      <ul class="ilist" style="padding:0;">
+        <li>The IS team will review your submission and configure ZTNA access for your team.</li>
+        <li>If anything is unclear, the IS team will reach out to you directly.</li>
+        <li>Need to add more resources? Fill in a new form and email the JSON with the same reference number.</li>
+        <li>For questions, post in the <strong>#RolloutSupport</strong> Slack channel with your reference number.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SITE_URL = '/sites/security/ZTPA';
+const LIST_GUID_SUB = '94be29cb-aa65-4b99-a976-19e0a6918006';
+const LIST_MEM = 'ZTNA Team Members';
+const LIST_RES = 'ZTNA Resources';
+
+let currentStep = 1, submissionRef = '', submissionId = null;
+let members = [], webApps = [], rdpServers = [], sshServers = [], dbServers = [], otherResources = [];
+
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const r = await fetch(`${SITE_URL}/_api/SP.UserProfiles.PeopleManager/GetMyProperties`, {headers:{'Accept':'application/json;odata=verbose'}});
+    const d = await r.json();
+    document.getElementById('userBadge').textContent = d.d.DisplayName || 'Signed in';
+    if (d.d.DisplayName) document.getElementById('managerName').value = d.d.DisplayName;
+    if (d.d.Email) document.getElementById('managerEmail').value = d.d.Email;
+  } catch(e) { document.getElementById('userBadge').textContent = 'Signed in'; }
+  loadDraft();
+});
+
+function goToStep(n) {
+  if (n===6) buildReview();
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('step'+n).classList.add('active');
+  for (let i=1;i<=6;i++) {
+    const sc=document.getElementById('sc'+i), sl=document.getElementById('sl'+i);
+    if (i<n){sc.classList.add('done');sc.innerHTML='✓';sc.classList.remove('active');sl.classList.remove('active');}
+    else if(i===n){sc.classList.add('active');sc.classList.remove('done');sc.innerHTML=i;sl.classList.add('active');}
+    else{sc.classList.remove('active','done');sc.innerHTML=i;sl.classList.remove('active');}
+    if(i<6){const c=document.getElementById('con'+i);if(c)i<n?c.classList.add('done'):c.classList.remove('done');}
+  }
+  currentStep=n; window.scrollTo(0,0);
+}
+
+function addMember(){
+  const u=document.getElementById('newMemberUsername').value.trim();
+  if(!u){showToast('Please enter an AD username','error');return;}
+  if(u.includes('@')){showToast('AD username only — no @teranet.ca','error');return;}
+  if(members.includes(u)){showToast('Already added','error');return;}
+  members.push(u); document.getElementById('newMemberUsername').value='';
+  renderMembers(); autosave();
+}
+function removeMember(i){members.splice(i,1);renderMembers();autosave();}
+function renderMembers(){
+  document.getElementById('memberCount').textContent=members.length+' member'+(members.length!==1?'s':'');
+  document.getElementById('membersBody').innerHTML=members.length
+    ?members.map((m,i)=>`<tr><td>${i+1}</td><td><code>${m}</code></td><td><button class="dbtn" onclick="removeMember(${i})">🗑</button></td></tr>`).join('')
+    :'<tr class="er"><td colspan="3">No members added yet.</td></tr>';
+}
+
+function addWebApp(){
+  const url=document.getElementById('newWebUrl').value.trim();
+  const port=document.getElementById('newWebPort').value.trim();
+  const desc=document.getElementById('newWebDesc').value.trim();
+  if(!url){showToast('Please enter a URL','error');return;}
+  webApps.push({url,port,description:desc});
+  document.getElementById('newWebUrl').value=''; document.getElementById('newWebPort').value=''; document.getElementById('newWebDesc').value='';
+  renderWebApps(); autosave();
+}
+function removeWebApp(i){webApps.splice(i,1);renderWebApps();autosave();}
+function renderWebApps(){
+  document.getElementById('webappCount').textContent=webApps.length+' entries';
+  document.getElementById('webappsBody').innerHTML=webApps.length
+    ?webApps.map((w,i)=>`<tr><td>${i+1}</td><td><code style="font-size:11px">${w.url}</code></td><td>${w.port}</td><td>${w.description}</td><td><button class="dbtn" onclick="removeWebApp(${i})">🗑</button></td></tr>`).join('')
+    :'<tr class="er"><td colspan="5">No web applications added yet.</td></tr>';
+}
+
+function addRdpServer(){
+  const host=document.getElementById('newRdpHost').value.trim();
+  const ip=document.getElementById('newRdpIp').value.trim();
+  const port='3389';
+  const desc=document.getElementById('newRdpDesc').value.trim();
+  if(!host){showToast('Please enter a hostname','error');return;}
+  rdpServers.push({hostname:host,ip,port,description:desc});
+  document.getElementById('newRdpHost').value=''; document.getElementById('newRdpIp').value='';
+  document.getElementById('newRdpDesc').value='';
+  renderRdp(); autosave();
+}
+function removeRdp(i){rdpServers.splice(i,1);renderRdp();autosave();}
+function renderRdp(){
+  document.getElementById('rdpCount').textContent=rdpServers.length+' entries';
+  document.getElementById('rdpBody').innerHTML=rdpServers.length
+    ?rdpServers.map((r,i)=>`<tr><td>${i+1}</td><td><code style="font-size:11px">${r.hostname}</code></td><td>${r.ip||'—'}</td><td>${r.port}</td><td>${r.description}</td><td><button class="dbtn" onclick="removeRdp(${i})">🗑</button></td></tr>`).join('')
+    :'<tr class="er"><td colspan="6">No RDP servers added yet.</td></tr>';
+}
+
+function addSshServer(){
+  const host=document.getElementById('newSshHost').value.trim();
+  const ip=document.getElementById('newSshIp').value.trim();
+  const port='22';
+  const desc=document.getElementById('newSshDesc').value.trim();
+  if(!host){showToast('Please enter a hostname','error');return;}
+  sshServers.push({hostname:host,ip,port,description:desc});
+  document.getElementById('newSshHost').value=''; document.getElementById('newSshIp').value='';
+  document.getElementById('newSshDesc').value='';
+  renderSsh(); autosave();
+}
+function removeSsh(i){sshServers.splice(i,1);renderSsh();autosave();}
+function renderSsh(){
+  document.getElementById('sshCount').textContent=sshServers.length+' entries';
+  document.getElementById('sshBody').innerHTML=sshServers.length
+    ?sshServers.map((s,i)=>`<tr><td>${i+1}</td><td><code style="font-size:11px">${s.hostname}</code></td><td>${s.ip||'—'}</td><td>${s.port}</td><td>${s.description}</td><td><button class="dbtn" onclick="removeSsh(${i})">🗑</button></td></tr>`).join('')
+    :'<tr class="er"><td colspan="6">No SSH servers added yet.</td></tr>';
+}
+
+function updateDbPort(){
+  const t=document.getElementById('newDbType').value;
+  const p=document.getElementById('newDbPort');
+  const h=document.getElementById('dbPortHint');
+  const defs={oracle:'1521',mssql:'1433',postgresql:'5432'};
+  if(defs[t]){p.value=defs[t];h.textContent='✓ Default '+t.toUpperCase()+' port';}
+  else{p.value='';h.textContent='';}
+}
+function addDbServer(){
+  const host=document.getElementById('newDbHost').value.trim();
+  const ip=document.getElementById('newDbIp').value.trim();
+  const type=document.getElementById('newDbType').value;
+  const port=document.getElementById('newDbPort').value.trim();
+  const desc=document.getElementById('newDbDesc').value.trim();
+  if(!host||!type||!port){showToast('Please fill in hostname, type and port','error');return;}
+  dbServers.push({hostname:host,ip,db_type:type,port,description:desc});
+  document.getElementById('newDbHost').value=''; document.getElementById('newDbIp').value='';
+  document.getElementById('newDbType').value=''; document.getElementById('newDbPort').value='';
+  document.getElementById('newDbDesc').value=''; document.getElementById('dbPortHint').textContent='';
+  renderDb(); autosave();
+}
+function removeDb(i){dbServers.splice(i,1);renderDb();autosave();}
+function renderDb(){
+  document.getElementById('dbCount').textContent=dbServers.length+' entries';
+  document.getElementById('dbBody').innerHTML=dbServers.length
+    ?dbServers.map((d,i)=>`<tr><td>${i+1}</td><td><code style="font-size:11px">${d.hostname}</code></td><td>${d.ip||'—'}</td><td><span class="badge">${d.db_type}</span></td><td>${d.port}</td><td>${d.description}</td><td><button class="dbtn" onclick="removeDb(${i})">🗑</button></td></tr>`).join('')
+    :'<tr class="er"><td colspan="7">No database servers added yet.</td></tr>';
+}
+
+function addOtherResource(){
+  const host=document.getElementById('newOtherHost').value.trim();
+  const port=document.getElementById('newOtherPort').value.trim();
+  const desc=document.getElementById('newOtherDesc').value.trim();
+  if(!host){showToast('Please enter an address','error');return;}
+  otherResources.push({hostname:host,ports:port,description:desc});
+  document.getElementById('newOtherHost').value=''; document.getElementById('newOtherPort').value=''; document.getElementById('newOtherDesc').value='';
+  renderOther(); autosave();
+}
+function removeOther(i){otherResources.splice(i,1);renderOther();autosave();}
+function renderOther(){
+  document.getElementById('otherCount').textContent=otherResources.length+' entries';
+  document.getElementById('otherBody').innerHTML=otherResources.length
+    ?otherResources.map((o,i)=>`<tr><td>${i+1}</td><td><code style="font-size:11px">${o.hostname}</code></td><td>${o.ports||'—'}</td><td>${o.description}</td><td><button class="dbtn" onclick="removeOther(${i})">🗑</button></td></tr>`).join('')
+    :'<tr class="er"><td colspan="5">No other resources added yet.</td></tr>';
+}
+
+function buildReview(){
+  const team=document.getElementById('teamName').value, mgr=document.getElementById('managerName').value;
+  const email=document.getElementById('managerEmail').value, notes=document.getElementById('teamNotes').value;
+  document.getElementById('reviewTeam').innerHTML=`<tr><td>Department / Team</td><td>${team||'—'}</td></tr><tr><td>Manager Name</td><td>${mgr||'—'}</td></tr><tr><td>Manager Email</td><td>${email||'—'}</td></tr><tr><td>Notes</td><td>${notes||'—'}</td></tr>`;
+  document.getElementById('reviewMemberCount').textContent=members.length;
+  document.getElementById('reviewMembersBody').innerHTML=members.length?members.map((m,i)=>`<tr><td>${i+1}</td><td><code>${m}</code></td></tr>`).join(''):'<tr class="er"><td colspan="2">None</td></tr>';
+  document.getElementById('reviewWebCount').textContent=webApps.length;
+  document.getElementById('reviewWebBody').innerHTML=webApps.length?webApps.map((w,i)=>`<tr><td>${i+1}</td><td><code style="font-size:11px">${w.url}</code></td><td>${w.port}</td><td>${w.description}</td></tr>`).join(''):'<tr class="er"><td colspan="4">None</td></tr>';
+  document.getElementById('reviewRdpCount').textContent=rdpServers.length;
+  document.getElementById('reviewRdpBody').innerHTML=rdpServers.length?rdpServers.map((r,i)=>`<tr><td>${i+1}</td><td><code style="font-size:11px">${r.hostname}</code></td><td>${r.ip||'—'}</td><td>${r.port}</td><td>${r.description}</td></tr>`).join(''):'<tr class="er"><td colspan="5">None</td></tr>';
+  document.getElementById('reviewSshCount').textContent=sshServers.length;
+  document.getElementById('reviewSshBody').innerHTML=sshServers.length?sshServers.map((s,i)=>`<tr><td>${i+1}</td><td><code style="font-size:11px">${s.hostname}</code></td><td>${s.ip||'—'}</td><td>${s.port}</td><td>${s.description}</td></tr>`).join(''):'<tr class="er"><td colspan="5">None</td></tr>';
+  document.getElementById('reviewDbCount').textContent=dbServers.length;
+  document.getElementById('reviewDbBody').innerHTML=dbServers.length?dbServers.map((d,i)=>`<tr><td>${i+1}</td><td><code style="font-size:11px">${d.hostname}</code></td><td>${d.ip||'—'}</td><td>${d.db_type}</td><td>${d.port}</td><td>${d.description}</td></tr>`).join(''):'<tr class="er"><td colspan="6">None</td></tr>';
+  document.getElementById('reviewOtherCount').textContent=otherResources.length;
+  document.getElementById('reviewOtherBody').innerHTML=otherResources.length?otherResources.map((o,i)=>`<tr><td>${i+1}</td><td><code style="font-size:11px">${o.hostname}</code></td><td>${o.ports||'—'}</td><td>${o.description}</td></tr>`).join(''):'<tr class="er"><td colspan="4">None</td></tr>';
+}
+
+function generateRef(){return 'ZTNA-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000);}
+
+function getFormData(){
+  return {
+    submission_id: submissionRef||generateRef(),
+    team_name: document.getElementById('teamName').value.trim(),
+    submitted_by: document.getElementById('managerEmail').value.trim(),
+    manager_name: document.getElementById('managerName').value.trim(),
+    submitted_date: new Date().toISOString().split('T')[0],
+    members: members, ad_groups: [],
+    access_requests: {
+      web_apps: webApps.map(w=>({url:w.url,description:w.description,ports:w.port.split(',').map(p=>parseInt(p.trim())).filter(p=>!isNaN(p))})),
+      rdp_servers: rdpServers.map(r=>({hostname:r.hostname,ip:r.ip||'',description:r.description})),
+      ssh_servers: sshServers.map(s=>({hostname:s.hostname,ip:s.ip||'',description:s.description})),
+      database_servers: dbServers.map(d=>({hostname:d.hostname,ip:d.ip||'',db_type:d.db_type,port:parseInt(d.port),description:d.description})),
+      other: otherResources.map(o=>({hostname:o.hostname,ports:o.ports,description:o.description}))
+    },
+    notes: document.getElementById('teamNotes').value.trim()
+  };
+}
+
+function downloadJSON(){
+  const data=getFormData();
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download=`ZTNA_${data.submission_id}.json`; a.click(); URL.revokeObjectURL(url);
+}
+
+function downloadCSV(){
+  const data=getFormData();
+  let csv='ZTNA Access Request Report\n';
+  csv+=`Submission Reference,${data.submission_id}\nTeam / Department,${data.team_name}\nManager,${data.manager_name}\nManager Email,${data.submitted_by}\nDate,${data.submitted_date}\nNotes,${data.notes}\n\n`;
+  csv+='TEAM MEMBERS\nAD Username\n'; data.members.forEach(m=>csv+=m+'\n');
+  csv+='\nWEB APPLICATIONS\nURL,Port(s),Description\n'; data.access_requests.web_apps.forEach(w=>csv+=`"${w.url}","${w.ports.join(';')}","${w.description}"\n`);
+  csv+='\nRDP SERVERS\nHostname,IP Address,Description\n'; data.access_requests.rdp_servers.forEach(r=>csv+=`"${r.hostname}","${r.ip}","${r.description}"\n`);
+  csv+='\nSSH SERVERS\nHostname,IP Address,Description\n'; data.access_requests.ssh_servers.forEach(s=>csv+=`"${s.hostname}","${s.ip}","${s.description}"\n`);
+  csv+='\nDATABASE SERVERS\nHostname,IP Address,DB Type,Port,Description\n'; data.access_requests.database_servers.forEach(d=>csv+=`"${d.hostname}","${d.ip}","${d.db_type}","${d.port}","${d.description}"\n`);
+  csv+='\nOTHER RESOURCES\nAddress,Port(s),Description\n'; data.access_requests.other.forEach(o=>csv+=`"${o.hostname}","${o.ports}","${o.description}"\n`);
+  const blob=new Blob([csv],{type:'text/csv'}), url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download=`ZTNA_${data.submission_id}.csv`; a.click(); URL.revokeObjectURL(url);
+}
+
+function autosave(){
+  const state={members,webApps,rdpServers,sshServers,dbServers,otherResources,submissionRef,
+    teamName:document.getElementById('teamName').value, managerName:document.getElementById('managerName').value,
+    managerEmail:document.getElementById('managerEmail').value, teamNotes:document.getElementById('teamNotes').value};
+  localStorage.setItem('ztna_draft_v2',JSON.stringify(state));
+}
+function saveDraft(){autosave();showToast('Draft saved','success');}
+function loadDraft(){
+  const saved=localStorage.getItem('ztna_draft_v2');
+  if(!saved)return;
+  try{
+    const s=JSON.parse(saved);
+    members=s.members||[];webApps=s.webApps||[];rdpServers=s.rdpServers||[];
+    sshServers=s.sshServers||[];dbServers=s.dbServers||[];otherResources=s.otherResources||[];
+    submissionRef=s.submissionRef||'';
+    if(s.teamName)document.getElementById('teamName').value=s.teamName;
+    if(s.managerName)document.getElementById('managerName').value=s.managerName;
+    if(s.managerEmail)document.getElementById('managerEmail').value=s.managerEmail;
+    if(s.teamNotes)document.getElementById('teamNotes').value=s.teamNotes;
+    renderMembers();renderWebApps();renderRdp();renderSsh();renderDb();renderOther();
+    showToast('Draft restored from your previous session','success');
+  }catch(e){}
+}
+
+async function getDigest(){
+  try{
+    const r=await fetch(`${SITE_URL}/_api/contextinfo`,{method:'POST',headers:{'Accept':'application/json;odata=verbose','Content-Type':'application/json;odata=verbose'}});
+    const d=await r.json(); return d.d.GetContextWebInformation.FormDigestValue;
+  }catch(e){return '';}
+}
+
+async function getEntityType(listName){ return null; }
+
+async function saveToSharePoint(status){
+  // SharePoint API not available in this context
+  // Data is saved via JSON download
+  console.log('saveToSharePoint called with status:', status);
+}
+
+
+
+async function submitForm(){
+  const team=document.getElementById('teamName').value.trim();
+  const mgr=document.getElementById('managerName').value.trim();
+  const email=document.getElementById('managerEmail').value.trim();
+  if(!team||!mgr||!email){showToast('Please complete Team Information in Step 2','error');return;}
+  if(members.length===0){showToast('Please add at least one team member','error');return;}
+  if(!submissionRef)submissionRef=generateRef();
+  document.getElementById('finalRef').textContent=submissionRef;
+  const rc=document.getElementById('refInCard');if(rc)rc.textContent=submissionRef;
+  document.getElementById('submitDate').textContent=new Date().toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'});
+  document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('step7').classList.add('active');
+  window.scrollTo(0,0);
+  showToast('Request submitted successfully!','success');
+}
+
+
+async function retrieveByRef(){
+  const ref = document.getElementById('retrieveRef').value.trim().toUpperCase();
+  const status = document.getElementById('retrieveStatus');
+  if(!ref){status.textContent='Please enter a reference number.';return;}
+  status.textContent='Searching...';
+  try{
+    const url=`${SITE_URL}/_api/web/lists(guid'${LIST_GUID_SUB}')/items?$filter=Title eq '${ref}'&$top=1`;
+    const r=await fetch(url,{headers:{'Accept':'application/json;odata=verbose'}});
+    if(!r.ok){status.textContent='Error contacting SharePoint.';return;}
+    const d=await r.json();
+    if(!d.d.results.length){status.style.color='var(--red)';status.textContent='No submission found with that reference number.';return;}
+    const item=d.d.results[0];
+    submissionId=item.Id; submissionRef=item.Title;
+    document.getElementById('teamName').value=item.Department_x0020_or_x0020_Team||'';
+    document.getElementById('managerName').value=item.Manager_x0020_Name||'';
+    document.getElementById('managerEmail').value=item.Manager_x0020_Email||'';
+    document.getElementById('teamNotes').value=item.Notes||'';
+    members=[]; webApps=[]; rdpServers=[]; sshServers=[]; dbServers=[]; otherResources=[];
+    const mUrl=`${SITE_URL}/_api/web/lists/getbytitle('${LIST_MEM}')/items?$filter=Submission_x0020_Reference eq '${ref}'`;
+    const mr=await fetch(mUrl,{headers:{'Accept':'application/json;odata=verbose'}});
+    if(mr.ok){const md=await mr.json();members=md.d.results.map(m=>m.Title);}
+    const rUrl=`${SITE_URL}/_api/web/lists/getbytitle('${LIST_RES}')/items?$filter=Submission_x0020_Reference eq '${ref}'`;
+    const rr=await fetch(rUrl,{headers:{'Accept':'application/json;odata=verbose'}});
+    if(rr.ok){
+      const rd=await rr.json();
+      rd.d.results.forEach(i=>{
+        const type=i.Resource_x0020_Type;
+        if(type==='Web App') webApps.push({url:i.Title,port:i.Port||'',description:i.Description||''});
+        else if(type==='RDP') rdpServers.push({hostname:i.Title,ip:i.IP_x0020_Address||'',port:'3389',description:i.Description||''});
+        else if(type==='SSH') sshServers.push({hostname:i.Title,ip:i.IP_x0020_Address||'',port:'22',description:i.Description||''});
+        else if(type==='Database') dbServers.push({hostname:i.Title,ip:i.IP_x0020_Address||'',db_type:i.Database_x0020_Type||'',port:i.Port||'',description:i.Description||''});
+        else if(type==='Other') otherResources.push({hostname:i.Title,ports:i.Port||'',description:i.Description||''});
+      });
+    }
+    renderMembers();renderWebApps();renderRdp();renderSsh();renderDb();renderOther();
+    status.style.color='var(--green)';
+    status.textContent='Submission ' + ref + ' loaded successfully.';
+    showToast('Submission retrieved — proceeding to form','success');
+    setTimeout(()=>goToStep(2),1200);
+  }catch(e){status.style.color='var(--red)';status.textContent='Error: '+e.message;}
+}
+
+function fillTestData(){
+  document.getElementById('teamName').value='Customer Service - Shared Services';
+  document.getElementById('managerName').value='Jane Smith';
+  document.getElementById('managerEmail').value='jsmith@teranet.ca';
+  document.getElementById('teamNotes').value='Test submission - please ignore';
+  members=['jsmith01','bdoe02','mlee03'];
+  webApps=[
+    {url:'https://teradmin.ca/ta_internal/Login.jsp',port:'',description:'Teradmin portal'},
+    {url:'https://portas-pass.corp.teranet.ca/admin',port:'',description:'Portas Pass admin'},
+    {url:'https://internalapp.teranet.ca:8443',port:'',description:'Internal app custom port'}
+  ];
+  rdpServers=[
+    {hostname:'az1avnapvwdv001.corp.teranet.ca',ip:'10.200.201.68',port:'3389',description:'Dev server'},
+    {hostname:'az1avnapvwuat001.corp.teranet.ca',ip:'10.200.202.10',port:'3389',description:'UAT server'}
+  ];
+  sshServers=[
+    {hostname:'mssaplxvwdev01.corp.teranet.ca',ip:'172.25.81.11',port:'22',description:'Linux dev server'}
+  ];
+  dbServers=[
+    {hostname:'az3appdbvwdev01.corp.teranet.ca',ip:'10.200.1.50',db_type:'oracle',port:'1521',description:'Dev Oracle DB'}
+  ];
+  otherResources=[
+    {hostname:'\\mrfsmwp1\SharedDrive',ports:'445',description:'Network file share'}
+  ];
+  renderMembers();renderWebApps();renderRdp();renderSsh();renderDb();renderOther();
+  showToast('Test data loaded — proceed through steps to submit','success');
+  goToStep(2);
+}
+
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(type?' '+type:'');
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+</script>
+</body>
+</html>
