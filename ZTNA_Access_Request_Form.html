@@ -694,6 +694,9 @@ async function submitForm(){
   if(!team||!mgr||!email){showToast('Please complete Team Information in Step 2','error');return;}
   if(members.length===0){showToast('Please add at least one team member','error');return;}
   if(!submissionRef)submissionRef=generateRef();
+  // Download JSON automatically on submit
+  downloadJSON();
+  localStorage.removeItem('ztna_draft_v2');
   document.getElementById('finalRef').textContent=submissionRef;
   const rc=document.getElementById('refInCard');if(rc)rc.textContent=submissionRef;
   document.getElementById('submitDate').textContent=new Date().toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'});
